@@ -21,7 +21,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
 
-    if len(set([args.key_labels, args.key_responses]) - set([None])) != 1:
+    if len({args.key_labels, args.key_responses} - {None}) != 1:
         sys.stderr.write("Error: Only either of label or response is required.\n")
         exit()
 
@@ -37,12 +37,9 @@ if __name__ == '__main__':
     for hdf5_file in hdf5_files:
         print(hdf5_file)
         fp = h5py.File(os.path.join(args.dataset_dir, hdf5_file), "r")
-        line = []
-
         assert args.key_data in fp.keys()
         volume = fp[args.key_data].value
-        line.append("data shape: {}, data type: {}, "
-                    .format(volume.shape, volume.dtype))
+        line = [f"data shape: {volume.shape}, data type: {volume.dtype}, "]
         assert len(volume.shape) == 4
         data_shape_set.add(volume.shape)
         data_dtype_set.add(volume.dtype)
@@ -50,8 +47,7 @@ if __name__ == '__main__':
         if args.key_labels is not None:
             assert args.key_labels in fp.keys()
             labels = fp[args.key_labels].value
-            line.append("label shape: {}, label type: {}"
-                        .format(labels.shape, labels.dtype))
+            line.append(f"label shape: {labels.shape}, label type: {labels.dtype}")
             assert len(labels.shape) == 4
             label_shape_set.add(labels.shape)
             label_dtype_set.add(labels.dtype)
@@ -59,8 +55,10 @@ if __name__ == '__main__':
         if args.key_responses is not None:
             assert args.key_responses in fp.keys()
             responses = fp[args.key_responses].value
-            line.append("response shape: {}, response type: {}"
-                        .format(responses.shape, responses.dtype))
+            line.append(
+                f"response shape: {responses.shape}, response type: {responses.dtype}"
+            )
+
             assert len(responses.shape) == 1
             response_shape_set.add(responses.shape)
             response_dtype_set.add(responses.dtype)
@@ -74,14 +72,13 @@ if __name__ == '__main__':
     if args.key_labels is not None:
         assert data_shape_set == label_shape_set
 
-    # Distconv expects each 3D tensor is a cube
-    if args.key_labels is not None:
         spatial_dimensions = list(data_shape_set)[0][1:]
         assert len(spatial_dimensions) == 3
         if len(set(spatial_dimensions)) > 1:
-            sys.stderr.write("Warning: The spatial dimensions are not the same."
-                             " This might cause unexpected bugs."
-                             " (found: {})\n".format(spatial_dimensions))
+            sys.stderr.write(
+                f"Warning: The spatial dimensions are not the same. This might cause unexpected bugs. (found: {spatial_dimensions})\n"
+            )
+
 
     # The data type should be the same
     assert len(data_dtype_set) == 1

@@ -44,20 +44,29 @@ class ConvBNRelu(lbann.modules.Module):
 
         # Initialize convolution
         self.conv = lbann.modules.Convolution3dModule(
-            out_channels, kernel_size,
-            stride=stride, padding=padding,
-            bias=False, weights=self.conv_weights,
-            name=self.name + '_conv')
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            bias=False,
+            weights=self.conv_weights,
+            name=f'{self.name}_conv',
+        )
+
 
         # Initialize batch normalization
         if self.use_bn:
             bn_scale_init = 0.0 if bn_zero_init else 1.0
             bn_scale = lbann.Weights(
                 initializer=lbann.ConstantInitializer(value=bn_scale_init),
-                name=self.name + '_bn_scale')
+                name=f'{self.name}_bn_scale',
+            )
+
             bn_bias = lbann.Weights(
                 initializer=lbann.ConstantInitializer(value=0.0),
-                name=self.name + '_bn_bias')
+                name=f'{self.name}_bn_bias',
+            )
+
             self.bn_weights = [bn_scale, bn_bias]
 
     def forward(self, x):
@@ -94,65 +103,98 @@ class Exa3DGAN(lbann.modules.Module):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, input_width, input_channel, name=None):
-       self.instance = 0
-       self.name = (name if name
-                     else 'Exa3DGAN{0}'.format(Exa3DGAN.global_count))
+        self.instance = 0
+        self.name = name or 'Exa3DGAN{0}'.format(Exa3DGAN.global_count)
 
-       convbnrelu = ConvBNRelu
-       fc = lbann.modules.FullyConnectedModule
-       conv = lbann.modules.Convolution3dModule
+        convbnrelu = ConvBNRelu
+        fc = lbann.modules.FullyConnectedModule
+        conv = lbann.modules.Convolution3dModule
 
-       bn_stats_grp_sz = -1 #0 global, 1 local
-       self.input_width = input_width
-       self.input_channel = input_channel
+        bn_stats_grp_sz = -1 #0 global, 1 local
+        self.input_width = input_width
+        self.input_channel = input_channel
 
-       assert self.input_width in [128, 256, 512]
+        assert self.input_width in [128, 256, 512]
 
-       w  = [input_width]*3 
-       w.insert(0,input_channel)
-       self.input_dims = w
-       print("INPUT W C DIM ", self.input_width, " ", self.input_channel, " ", self.input_dims , " ", list2str(self.input_dims))
+        w  = [input_width]*3
+        w.insert(0,input_channel)
+        self.input_dims = w
+        print("INPUT W C DIM ", self.input_width, " ", self.input_channel, " ", self.input_dims , " ", list2str(self.input_dims))
 
-       #last_conv_dim = [512,8,8,8] 
-       #Use Glorot for conv?
-       #initializer=lbann.GlorotUniformInitializer())]
-       self.inits = {'dense': lbann.NormalInitializer(mean=0,standard_deviation=0.02),
-                      'conv': lbann.NormalInitializer(mean=0,standard_deviation=0.02), #should be truncated Normal
-                      'convT':lbann.NormalInitializer(mean=0,standard_deviation=0.02)}
-      
-       #Discriminator 
-       d_channels = [64,128,256,512]
-       self.d1_conv = [convbnrelu(d_channels[i], 2, 2, 0, False, bn_stats_grp_sz, False,
-                                  name=self.name+'_disc1_conv'+str(i), 
-                                  activation=lbann.LeakyRelu,
-                                  conv_weights=[lbann.Weights(initializer=self.inits['conv'])])
-                   for i in range(len(d_channels))] 
-       self.d1_fc = fc(1,name=self.name+'_disc1_fc',
-                       weights=[lbann.Weights(initializer=self.inits['dense'])])
+        #last_conv_dim = [512,8,8,8] 
+        #Use Glorot for conv?
+        #initializer=lbann.GlorotUniformInitializer())]
+        self.inits = {'dense': lbann.NormalInitializer(mean=0,standard_deviation=0.02),
+                       'conv': lbann.NormalInitializer(mean=0,standard_deviation=0.02), #should be truncated Normal
+                       'convT':lbann.NormalInitializer(mean=0,standard_deviation=0.02)}
 
-       #stacked_discriminator, this will be frozen, no optimizer, 
-       #layer has to be named for callback
-       self.d2_conv = [convbnrelu(d_channels[i], 2, 2, 0, False, bn_stats_grp_sz, False,
-                                  name=self.name+'_disc2_conv'+str(i), 
-                                  activation=lbann.LeakyRelu,
-                                  conv_weights=[lbann.Weights(initializer=self.inits['conv'])])
-                   for i in range(len(d_channels))] 
-       self.d2_fc = fc(1,name=self.name+'_disc2_fc',
-                       weights=[lbann.Weights(initializer=self.inits['dense'])])
-       
-       #Generator
-       #3D=512*8*8*8, 2D== 512*4*4
-       self.g_fc1 = fc(512*8*8*8,name=self.name+'_gen_fc1',
-                       weights=[lbann.Weights(initializer=self.inits['dense'])])
+        #Discriminator 
+        d_channels = [64,128,256,512]
+        self.d1_conv = [
+            convbnrelu(
+                d_channels[i],
+                2,
+                2,
+                0,
+                False,
+                bn_stats_grp_sz,
+                False,
+                name=f'{self.name}_disc1_conv{str(i)}',
+                activation=lbann.LeakyRelu,
+                conv_weights=[lbann.Weights(initializer=self.inits['conv'])],
+            )
+            for i in range(len(d_channels))
+        ]
 
-       g_channels = [256,128,64]
-      
-       self.g_convT = [conv(g_channels[i], 2, stride=2, padding=0, transpose=True,
-                       weights=[lbann.Weights(initializer=self.inits['convT'])])
-                       for i in range(len(g_channels))] 
+        self.d1_fc = fc(
+            1,
+            name=f'{self.name}_disc1_fc',
+            weights=[lbann.Weights(initializer=self.inits['dense'])],
+        )
 
-       self.g_convT3 = conv(input_channel, 2, stride=2, padding=0, activation=lbann.Tanh,name='gen_img',transpose=True,
-                       weights=[lbann.Weights(initializer=self.inits['convT'])])
+
+           #stacked_discriminator, this will be frozen, no optimizer, 
+           #layer has to be named for callback
+        self.d2_conv = [
+            convbnrelu(
+                d_channels[i],
+                2,
+                2,
+                0,
+                False,
+                bn_stats_grp_sz,
+                False,
+                name=f'{self.name}_disc2_conv{str(i)}',
+                activation=lbann.LeakyRelu,
+                conv_weights=[lbann.Weights(initializer=self.inits['conv'])],
+            )
+            for i in range(len(d_channels))
+        ]
+
+        self.d2_fc = fc(
+            1,
+            name=f'{self.name}_disc2_fc',
+            weights=[lbann.Weights(initializer=self.inits['dense'])],
+        )
+
+
+           #Generator
+           #3D=512*8*8*8, 2D== 512*4*4
+        self.g_fc1 = fc(
+            512 * 8 * 8 * 8,
+            name=f'{self.name}_gen_fc1',
+            weights=[lbann.Weights(initializer=self.inits['dense'])],
+        )
+
+
+        g_channels = [256,128,64]
+
+        self.g_convT = [conv(g_channels[i], 2, stride=2, padding=0, transpose=True,
+                        weights=[lbann.Weights(initializer=self.inits['convT'])])
+                        for i in range(len(g_channels))] 
+
+        self.g_convT3 = conv(input_channel, 2, stride=2, padding=0, activation=lbann.Tanh,name='gen_img',transpose=True,
+                        weights=[lbann.Weights(initializer=self.inits['convT'])])
 
     def forward(self, img, z):
     #description

@@ -25,7 +25,7 @@ def get_custom_generator(env, **kwargs):
         num_nodes_values.append(param_combo[0])
         mb_sizes_values.append(param_combo[1])
         procs_per_trainer_values.append(param_combo[2])
-        ltfbbi_values.append(int(int(iter_per_tournament) / int(param_combo[1])))
+        ltfbbi_values.append(int(iter_per_tournament) // int(param_combo[1]))
         if param_combo[3] == 'True':
             lr_values.append(3e-4 * (int(param_combo[1])/512))
         else:

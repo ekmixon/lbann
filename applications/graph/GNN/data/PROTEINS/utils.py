@@ -66,7 +66,7 @@ def extract_adj_mat(node_slices, edge_list, max_nodes):
             adj_mat_list.append(adj_mat)
         else:
             removed_graphs.append(i)
-            
+
     return adj_mat_list, removed_graphs
 
 def extract_targets(graph_labels, num_classes, removed_graphs):
@@ -77,7 +77,7 @@ def extract_targets(graph_labels, num_classes, removed_graphs):
 
 def dataset_node_slices(graph_indicator_list, num_graphs):
     node_slices = []
-    
+
     prev = 0
     for i in range(num_graphs+1):
         node_slices.append(prev+graph_indicator_list.count(str(i)))
@@ -85,29 +85,40 @@ def dataset_node_slices(graph_indicator_list, num_graphs):
     return node_slices
 
 def TUDataset_Parser(data_dir, dataset_name, num_classes):
-        
-    adj_file = open(os.path.join(data_dir, dataset_name + '_A.txt'), 'r')
-    graph_labels_file = open(os.path.join( data_dir, dataset_name + '_graph_labels.txt'), 'r')
-    graph_ind_file = open(os.path.join( data_dir, dataset_name + '_graph_indicator.txt'), 'r')    
-    node_attr_file = open(os.path.join( data_dir, dataset_name + '_node_attributes.txt'), 'r')
-    node_labels_file = open(os.path.join( data_dir, dataset_name + '_node_labels.txt'), 'r')
+    
+    with open(os.path.join(data_dir, f'{dataset_name}_A.txt'), 'r') as adj_file:
+        graph_labels_file = open(
+            os.path.join(data_dir, f'{dataset_name}_graph_labels.txt'), 'r'
+        )
 
-    graph_labels = graph_labels_file.read().rstrip().split('\n')
-    graph_ind = graph_ind_file.read().rstrip().split('\n')
-    node_attr = node_attr_file.read().rstrip().split('\n')
-    adj_list = adj_file.read().rstrip().split('\n')
-    node_labels = node_labels_file.read().rstrip().split('\n')
+        graph_ind_file = open(
+            os.path.join(data_dir, f'{dataset_name}_graph_indicator.txt'), 'r'
+        )
 
-    NUM_GRAPHS =  len(graph_labels)
-    NUM_NODES = len(node_attr)
-    NUM_EDGES = len(adj_list)
+        node_attr_file = open(
+            os.path.join(data_dir, f'{dataset_name}_node_attributes.txt'), 'r'
+        )
 
-    adj_file.close()
+        node_labels_file = open(
+            os.path.join(data_dir, f'{dataset_name}_node_labels.txt'), 'r'
+        )
+
+
+        graph_labels = graph_labels_file.read().rstrip().split('\n')
+        graph_ind = graph_ind_file.read().rstrip().split('\n')
+        node_attr = node_attr_file.read().rstrip().split('\n')
+        adj_list = adj_file.read().rstrip().split('\n')
+        node_labels = node_labels_file.read().rstrip().split('\n')
+
+        NUM_GRAPHS =  len(graph_labels)
+        NUM_NODES = len(node_attr)
+        NUM_EDGES = len(adj_list)
+
     graph_labels_file.close()
     graph_ind_file.close()
     node_attr_file.close()
     node_labels_file.close()
-    edge_list = [] 
+    edge_list = []
     for edge in adj_list:
         edge = np.array([int(x) for x in edge.split(',')])
         edge_list.append(edge)
@@ -115,7 +126,7 @@ def TUDataset_Parser(data_dir, dataset_name, num_classes):
     edge_list = np.array(edge_list)
 
     node_slices = dataset_node_slices(graph_ind, NUM_GRAPHS)
-    
+
     max_nodes = 100
     adj_mat, removed_graphs = extract_adj_mat(node_slices, edge_list, max_nodes)
     num_features = 3

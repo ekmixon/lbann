@@ -13,9 +13,8 @@ dims = 128*128*1
 
 # Sample access functions
 def get_sample(index):
-    sample = samples[index].flatten()
     #normalization here if unnormalized
-    return sample
+    return samples[index].flatten()
 
 def num_samples():
     return samples.shape[0]

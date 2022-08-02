@@ -47,8 +47,7 @@ class CosmoFlow(lm.Module):
 
         CosmoFlow.global_count += 1
         self.instance = 0
-        self.name = (name if name
-                     else 'cosmoflow_module{0}'.format(CosmoFlow.global_count))
+        self.name = name or 'cosmoflow_module{0}'.format(CosmoFlow.global_count)
         self.input_width = input_width
         self.use_bn = use_bn
 
@@ -85,7 +84,7 @@ class CosmoFlow(lm.Module):
         # Create convolutional blocks
         activation = lbann.LeakyRelu
         for i, param in enumerate(filter(lambda x: x["type"] == "conv", self.cp_params)):
-            conv_name ="conv"+str(i+1)
+            conv_name = f"conv{str(i+1)}"
             conv_weights = [lbann.Weights(
                 initializer=lbann.GlorotUniformInitializer())]
             param_actual = dict(param)
@@ -96,8 +95,10 @@ class CosmoFlow(lm.Module):
                 use_bn=self.use_bn,
                 bn_statistics_group_size=bn_statistics_group_size,
                 bn_zero_init=False,
-                name=self.name+"_"+conv_name,
-                activation=lbann.LeakyRelu)
+                name=f"{self.name}_{conv_name}",
+                activation=lbann.LeakyRelu,
+            )
+
             setattr(self, conv_name, conv)
 
         # Create fully-connected layers
@@ -107,14 +108,19 @@ class CosmoFlow(lm.Module):
             {"size": output_size},
         ]
         for i, param in enumerate(fc_params):
-            fc_name = "fc"+str(i+1)
+            fc_name = f"fc{str(i+1)}"
             fc = lm.FullyConnectedModule(
                 **param,
-                activation=activation if i < len(fc_params)-1 else None,
-                name=self.name+"_"+fc_name,
-                weights=[lbann.Weights(initializer=lbann.GlorotUniformInitializer()),
-                         lbann.Weights(initializer=lbann.ConstantInitializer(value=0.1))],
+                activation=activation if i < len(fc_params) - 1 else None,
+                name=f"{self.name}_{fc_name}",
+                weights=[
+                    lbann.Weights(initializer=lbann.GlorotUniformInitializer()),
+                    lbann.Weights(
+                        initializer=lbann.ConstantInitializer(value=0.1)
+                    ),
+                ],
             )
+
             setattr(self, fc_name, fc)
 
     def forward(self, x):
@@ -192,20 +198,29 @@ class ConvBNRelu(lbann.modules.Module):
 
         # Initialize convolution
         self.conv = lbann.modules.Convolution3dModule(
-            out_channels, kernel_size,
-            stride=stride, padding=padding,
-            bias=False, weights=self.conv_weights,
-            name=self.name + '_conv')
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            bias=False,
+            weights=self.conv_weights,
+            name=f'{self.name}_conv',
+        )
+
 
         # Initialize batch normalization
         if self.use_bn:
             bn_scale_init = 0.0 if bn_zero_init else 1.0
             bn_scale = lbann.Weights(
                 initializer=lbann.ConstantInitializer(value=bn_scale_init),
-                name=self.name + '_bn_scale')
+                name=f'{self.name}_bn_scale',
+            )
+
             bn_bias = lbann.Weights(
                 initializer=lbann.ConstantInitializer(value=0.0),
-                name=self.name + '_bn_bias')
+                name=f'{self.name}_bn_bias',
+            )
+
             self.bn_weights = [bn_scale, bn_bias]
 
     def forward(self, x):
@@ -242,8 +257,7 @@ def create_cosmoflow_data_reader(
     ]
 
     for reader_arg in reader_args:
-        reader_arg["data_file_pattern"] = "{}/*.hdf5".format(
-            reader_arg["data_filename"])
+        reader_arg["data_file_pattern"] = f'{reader_arg["data_filename"]}/*.hdf5'
         reader_arg["hdf5_key_data"] = "full"
         reader_arg["hdf5_key_responses"] = "unitPar"
         reader_arg["num_responses"] = num_responses
@@ -302,11 +316,15 @@ if __name__ == "__main__":
         help='Use local batch normalization mode')
     default_lc_dataset = '/p/gpfs1/brainusr/datasets/cosmoflow/cosmoUniverse_2019_05_4parE/hdf5_transposed_dim128_float'
     for role in ['train', 'val', 'test']:
-        default_dir = '{}/{}'.format(default_lc_dataset, role)
+        default_dir = f'{default_lc_dataset}/{role}'
         parser.add_argument(
-            '--{}-dir'.format(role), action='store', type=str,
+            f'--{role}-dir',
+            action='store',
+            type=str,
             default=default_dir,
-            help='the directory of the {} dataset'.format(role))
+            help=f'the directory of the {role} dataset',
+        )
+
 
     # Parallelism arguments
     parser.add_argument(
@@ -355,12 +373,17 @@ if __name__ == "__main__":
         depth_groups=args.depth_groups)
     pooling_id = 0
     dropout_id = 0
-    for i, layer in enumerate(layers):
+    for layer in layers:
         if layer == secrets:
             continue
 
         layer_name = layer.__class__.__name__
-        if layer_name == 'Pooling':
+        if layer_name == 'Dropout':
+            dropout_id += 1
+            if dropout_id == args.gather_dropout_id:
+                break
+
+        elif layer_name == 'Pooling':
             pooling_id += 1
 
             depth_splits_pooling_id = args.depth_splits_pooling_id
@@ -371,11 +394,6 @@ if __name__ == "__main__":
             if pooling_id == depth_splits_pooling_id:
                 parallel_strategy = dict(parallel_strategy.items())
                 parallel_strategy['depth_splits'] = 1
-
-        elif layer_name == 'Dropout':
-            dropout_id += 1
-            if dropout_id == args.gather_dropout_id:
-                break
 
         layer.parallel_strategy = parallel_strategy
 

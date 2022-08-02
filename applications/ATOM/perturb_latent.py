@@ -22,7 +22,7 @@ def perturb_latent_vectors(latent_file, noise_factors):
     # Load the latent vector table, which includes an identifier or SMILES string in the first column
     #latent_df = pd.read_csv(latent_file)
     latent_df = pd.DataFrame(np.load(latent_file))
-    print("Read %s" % latent_file)
+    print(f"Read {latent_file}")
     print("In File shape ", latent_df.shape)
     id_col = latent_df.columns.values[:102]
     latent_cols = latent_df.columns.values[102:]
@@ -42,7 +42,7 @@ def perturb_latent_vectors(latent_file, noise_factors):
         output_file = '%s_noise_sd_%.1f.npy' % (os.path.splitext(latent_file)[0], noise_factor)
         print("Out df shape ", output_df.shape)
         np.save(output_file, output_df.to_numpy())
-        print("Wrote %s" % output_file)
+        print(f"Wrote {output_file}")
 
 
 def main():
@@ -50,12 +50,9 @@ def main():
 
     parser.add_argument("--latent_file", "-i", required=True)
     parser.add_argument("--noise_factor", "-f", required=True)
-    
-    #noise_factors = [0.0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0, 1.2, 1.5, 1.7, 2.0]
-    noise_factors = []
-    args = parser.parse_args()
-    noise_factors.append(float(args.noise_factor))
 
+    args = parser.parse_args()
+    noise_factors = [float(args.noise_factor)]
     perturb_latent_vectors(args.latent_file, noise_factors)
 
 

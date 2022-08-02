@@ -107,20 +107,20 @@ def augment_test_func(test_func):
             for line in f:
                 match = re.search('training epoch [0-9]+ accuracy : ([0-9.]+)%', line)
                 if match:
-                    train_accuracy = float(match.group(1))
+                    train_accuracy = float(match[1])
                 match = re.search('training epoch [0-9]+ mini-batch time statistics : ([0-9.]+)s mean', line)
                 if match:
-                    mini_batch_times.append(float(match.group(1)))
+                    mini_batch_times.append(float(match[1]))
                 match = re.search('GPU memory usage statistics : ([0-9.]+) GiB mean', line)
                 if match:
-                    gpu_usages.append(float(match.group(1)))
-                    
+                    gpu_usages.append(float(match[1]))
+
         # Check if training accuracy is within expected range
         assert (expected_accuracy_range[0]
                 < train_accuracy
                 <expected_accuracy_range[1]), \
                 'train accuracy is outside expected range'
-       
+
         #Only tested on Ray. Skip if mini-batch test on another cluster. Change this when mini-batch values are available for other clusters 
 
         if (cluster == 'ray'):
@@ -141,6 +141,7 @@ def augment_test_func(test_func):
                     < gpu_usage 
                     < 1.25 * expected_gpu_usage[cluster]),\
                     'average gpu usage is outside expected range'
+
     # Return test function from factory function
     func.__name__ = test_name
     return func

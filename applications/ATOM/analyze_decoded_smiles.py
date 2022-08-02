@@ -94,13 +94,13 @@ def compare_decoded_to_original_smiles(orig_smiles, decoded_smiles, output_file=
     res_df['tanimoto_distance'] = tani_dist
     global_acc  = np.mean(np.array(accuracy))
     res_df['total_avg_accuracy'] = [global_acc]*len(accuracy)
-    
+
     print("Mean global accuracy % ", global_acc)
     print("Validity % ", (is_valid.count(1)/data_size)*100)
     print("Same % ", (is_same.count(1)/data_size)*100)
     valid_tani_dist = [ t for t in tani_dist if t >= 0 ] 
     print("Average tanimoto ", np.mean(np.array(valid_tani_dist)))
-    
+
 
     if output_file is not None:
         output_columns = ['original', 'decoded', 'is_valid', 'is_same', 'smile_accuracy','tanimoto_distance','total_avg_accuracy']

@@ -38,19 +38,27 @@ class ConvBNRelu(lbann.modules.Module):
 
         # Initialize convolution
         self.conv = lbann.modules.Convolution2dModule(
-            out_channels, kernel_size,
-            stride=stride, padding=padding,
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
             bias=False,
-            name=self.name + '_conv')
+            name=f'{self.name}_conv',
+        )
+
 
         # Initialize batch normalization
         bn_scale_init = 0.0 if bn_zero_init else 1.0
         bn_scale = lbann.Weights(
             initializer=lbann.ConstantInitializer(value=bn_scale_init),
-            name=self.name + '_bn_scale')
+            name=f'{self.name}_bn_scale',
+        )
+
         bn_bias = lbann.Weights(
             initializer=lbann.ConstantInitializer(value=0.0),
-            name=self.name + '_bn_bias')
+            name=f'{self.name}_bn_bias',
+        )
+
         self.bn_weights = [bn_scale, bn_bias]
         self.bn_statistics_group_size = bn_statistics_group_size
 
@@ -107,25 +115,54 @@ class BasicBlock(lbann.modules.Module):
 
         # Skip connection
         if downsample:
-            self.branch1 = ConvBNRelu(self.out_channels, 1, 2, 0,
-                                      False, bn_statistics_group_size,
-                                      False, self.name + '_branch1')
+            self.branch1 = ConvBNRelu(
+                self.out_channels,
+                1,
+                2,
+                0,
+                False,
+                bn_statistics_group_size,
+                False,
+                f'{self.name}_branch1',
+            )
+
         elif in_channels != self.out_channels:
-            self.branch1 = ConvBNRelu(self.out_channels, 1, 1, 0,
-                                      False, bn_statistics_group_size,
-                                      False, self.name + '_branch1')
+            self.branch1 = ConvBNRelu(
+                self.out_channels,
+                1,
+                1,
+                0,
+                False,
+                bn_statistics_group_size,
+                False,
+                f'{self.name}_branch1',
+            )
+
         else:
             self.branch1 = None
 
         # Residual branch
-        self.branch2a = ConvBNRelu(mid_channels, 3,
-                                   (2 if downsample else 1), 1,
-                                   False, bn_statistics_group_size,
-                                   True, self.name + '_branch2a')
-        self.branch2b = ConvBNRelu(self.out_channels, 3, 1, 1,
-                                   zero_init_residual,
-                                   bn_statistics_group_size,
-                                   False, self.name + '_branch2b')
+        self.branch2a = ConvBNRelu(
+            mid_channels,
+            3,
+            2 if downsample else 1,
+            1,
+            False,
+            bn_statistics_group_size,
+            True,
+            f'{self.name}_branch2a',
+        )
+
+        self.branch2b = ConvBNRelu(
+            self.out_channels,
+            3,
+            1,
+            1,
+            zero_init_residual,
+            bn_statistics_group_size,
+            False,
+            f'{self.name}_branch2b',
+        )
 
     def forward(self, x):
         self.instance += 1
@@ -172,28 +209,65 @@ class BottleneckBlock(lbann.modules.Module):
 
         # Skip connection
         if downsample:
-            self.branch1 = ConvBNRelu(self.out_channels, 1, 2, 0,
-                                      False, bn_statistics_group_size,
-                                      False, self.name + '_branch1')
+            self.branch1 = ConvBNRelu(
+                self.out_channels,
+                1,
+                2,
+                0,
+                False,
+                bn_statistics_group_size,
+                False,
+                f'{self.name}_branch1',
+            )
+
         elif in_channels != self.out_channels:
-            self.branch1 = ConvBNRelu(self.out_channels, 1, 1, 0,
-                                      False, bn_statistics_group_size,
-                                      False, self.name + '_branch1')
+            self.branch1 = ConvBNRelu(
+                self.out_channels,
+                1,
+                1,
+                0,
+                False,
+                bn_statistics_group_size,
+                False,
+                f'{self.name}_branch1',
+            )
+
         else:
             self.branch1 = None
 
         # Residual branch
-        self.branch2a = ConvBNRelu(mid_channels, 1, 1, 0,
-                                   False, bn_statistics_group_size,
-                                   True, self.name + '_branch2a')
-        self.branch2b = ConvBNRelu(mid_channels, 3,
-                                   (2 if downsample else 1), 1,
-                                   False, bn_statistics_group_size,
-                                   True, self.name + '_branch2b')
-        self.branch2c = ConvBNRelu(self.out_channels, 1, 1, 0,
-                                   zero_init_residual,
-                                   bn_statistics_group_size,
-                                   False, self.name + '_branch2c')
+        self.branch2a = ConvBNRelu(
+            mid_channels,
+            1,
+            1,
+            0,
+            False,
+            bn_statistics_group_size,
+            True,
+            f'{self.name}_branch2a',
+        )
+
+        self.branch2b = ConvBNRelu(
+            mid_channels,
+            3,
+            2 if downsample else 1,
+            1,
+            False,
+            bn_statistics_group_size,
+            True,
+            f'{self.name}_branch2b',
+        )
+
+        self.branch2c = ConvBNRelu(
+            self.out_channels,
+            1,
+            1,
+            0,
+            zero_init_residual,
+            bn_statistics_group_size,
+            False,
+            f'{self.name}_branch2c',
+        )
 
     def forward(self, x):
         self.instance += 1
@@ -254,9 +328,17 @@ class ResNet(lbann.modules.Module):
         super().__init__()
         self.name = name
         self.instance = 0
-        self.conv1 = ConvBNRelu(layer_channels[0], 7, 2, 3,
-                                False, bn_statistics_group_size,
-                                True, self.name + '_conv1')
+        self.conv1 = ConvBNRelu(
+            layer_channels[0],
+            7,
+            2,
+            3,
+            False,
+            bn_statistics_group_size,
+            True,
+            f'{self.name}_conv1',
+        )
+
         self.blocks = []
         for layer in range(len(layer_sizes)):
             mid_channels = layer_channels[layer]

@@ -14,24 +14,29 @@ class BatchNormModule(lbann.modules.Module):
         BatchNormModule.global_count += 1
         self.instance = 0
         self.statistics_group_size = statistics_group_size
-        self.name = (name
-                     if name
-                     else 'bnmodule{0}'.format(BatchNormModule.global_count))
+        self.name = name or 'bnmodule{0}'.format(BatchNormModule.global_count)
         self.data_layout = data_layout
 
         # Initialize weights
         self.scale = lbann.Weights(
             initializer=lbann.ConstantInitializer(value=1.0),
-            name=self.name + '_scale')
+            name=f'{self.name}_scale',
+        )
+
         self.bias = lbann.Weights(
             initializer=lbann.ConstantInitializer(value=0.0),
-            name=self.name + '_bias')
+            name=f'{self.name}_bias',
+        )
+
         self.running_mean = lbann.Weights(
             initializer=lbann.ConstantInitializer(value=0.0),
-            name=self.name + '_running_mean')
+            name=f'{self.name}_running_mean',
+        )
+
         self.running_variance = lbann.Weights(
             initializer=lbann.ConstantInitializer(value=1.0),
-            name=self.name + '_running_variance')
+            name=f'{self.name}_running_variance',
+        )
 
     def forward(self, x):
         self.instance += 1
@@ -60,17 +65,19 @@ class ConvBnRelu(lbann.modules.Module):
         super().__init__()
         ConvBnRelu.global_count += 1
         self.instance = 0
-        self.name = (name
-                     if name
-                     else 'convbnrelu{0}'.format(ConvBnRelu.global_count))
-        self.conv = lbann.modules.Convolution2dModule(out_channels,
-                                                      kernel_size,
-                                                      stride=stride,
-                                                      padding=padding,
-                                                      bias=False,
-                                                      name=self.name+'_conv')
-        self.bn = BatchNormModule(statistics_group_size=statistics_group_size,
-                                  name=self.name+'_bn')
+        self.name = name or 'convbnrelu{0}'.format(ConvBnRelu.global_count)
+        self.conv = lbann.modules.Convolution2dModule(
+            out_channels,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            bias=False,
+            name=f'{self.name}_conv',
+        )
+
+        self.bn = BatchNormModule(
+            statistics_group_size=statistics_group_size, name=f'{self.name}_bn'
+        )
 
     def forward(self, x):
         self.instance += 1
@@ -90,14 +97,12 @@ class FcBnRelu(lbann.modules.Module):
         super().__init__()
         FcBnRelu.global_count += 1
         self.instance = 0
-        self.name = (name
-                     if name
-                     else 'fcbnrelu{0}'.format(FcBnRelu.global_count))
+        self.name = name or 'fcbnrelu{0}'.format(FcBnRelu.global_count)
         self.data_layout = data_layout
-        self.fc = lbann.modules.FullyConnectedModule(size,
-                                                     bias=False,
-                                                     name=self.name+'_fc',
-                                                     data_layout=self.data_layout)
+        self.fc = lbann.modules.FullyConnectedModule(
+            size, bias=False, name=f'{self.name}_fc', data_layout=self.data_layout
+        )
+
 
         # Weights for batchnorm
         scalebias_vals = [1.0] * size + [0.0] * size

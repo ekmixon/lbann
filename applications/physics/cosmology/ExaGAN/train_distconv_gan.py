@@ -54,11 +54,15 @@ def construct_lc_launcher_args():
         help='Use local batch normalization mode')
     default_lc_dataset = '/p/gpfs1/brainusr/datasets/cosmoflow/cosmoUniverse_2019_05_4parE/hdf5_transposed_dim128_float/batch8'
     for role in ['train', 'val', 'test']:
-        default_dir = '{}/{}'.format(default_lc_dataset, role)
+        default_dir = f'{default_lc_dataset}/{role}'
         parser.add_argument(
-            '--{}-dir'.format(role), action='store', type=str,
+            f'--{role}-dir',
+            action='store',
+            type=str,
             default=default_dir,
-            help='the directory of the {} dataset'.format(role))
+            help=f'the directory of the {role} dataset',
+        )
+
 
     # Parallelism arguments
     parser.add_argument(
@@ -114,7 +118,7 @@ def construct_model(run_args):
     parallel_strategy = get_parallel_strategy_args(
         sample_groups=run_args.mini_batch_size,
         depth_groups=run_args.depth_groups)
-   
+
     '''
     supported_layers=["Input","Convolution", "Deconvolution", "Relu","Tanh", "FullyConnected", "BatchNormalization"]
     for i, layer in enumerate(layers):
@@ -177,8 +181,7 @@ def create_hdf5_data_reader(
     ]
 
     for reader_arg in reader_args:
-        reader_arg["data_file_pattern"] = "{}/*.hdf5".format(
-            reader_arg["data_filename"])
+        reader_arg["data_file_pattern"] = f'{reader_arg["data_filename"]}/*.hdf5'
         reader_arg["hdf5_key_data"] = "full"
         reader_arg["hdf5_key_responses"] = "unitPar"
         reader_arg["num_responses"] = num_responses

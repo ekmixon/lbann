@@ -104,7 +104,7 @@ def construct_model(run_args):
     sequence_length = run_args.sequence_length
     assert sequence_length is not None
 
-    print("sequence length is {}".format(sequence_length))
+    print(f"sequence length is {sequence_length}")
     data_layout = "data_parallel"
     # Layer graph
     input_ = lbann.Identity(lbann.Input(name='inp',target_mode="N/A"), name='inp1')
@@ -115,7 +115,7 @@ def construct_model(run_args):
     assert embedding_size is not None
     assert dictionary_size is not None
 
-    save_output = True if run_args.dump_outputs_dir else False
+    save_output = bool(run_args.dump_outputs_dir)
 
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
     z = lbann.Gaussian(mean=run_args.g_mean,stdev=run_args.g_std, neuron_dims=str(run_args.z_dim))
@@ -223,7 +223,7 @@ def construct_data_reader(run_args):
     module_name = os.path.splitext(os.path.basename(module_file))[0]
     module_dir = os.path.dirname(module_file)
 
-    print("module_name: {}\tmodule_dir: {}".format(module_name, module_dir))
+    print(f"module_name: {module_name}\tmodule_dir: {module_dir}")
 
     # Base data reader message
     message = lbann.reader_pb2.DataReader()
@@ -279,9 +279,7 @@ def main():
     else:
         work_dir = os.path.join(os.getcwd())
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    experiment_dir = os.path.join(
-        work_dir, "{}_{}".format(timestamp, run_args.job_name)
-    )
+    experiment_dir = os.path.join(work_dir, f"{timestamp}_{run_args.job_name}")
     if not os.path.exists(experiment_dir):
         os.makedirs(experiment_dir)
 
@@ -292,9 +290,9 @@ def main():
     # dump the config to the experiment_dir so that it can be used to load the model in pytorch (moses codebase)
     ppn = 4 if run_args.scheduler == "lsf" else 2
     print("args:\n" + str(run_args))
-    if(run_args.scheduler == 'slurm'):
-      import torch
-      torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
+    if (run_args.scheduler == 'slurm'):
+        import torch
+        torch.save(run_args, f"{experiment_dir}/{run_args.job_name}_config.pt")
 
     m_lbann_args=f"--vocab={run_args.vocab} --data_filedir={run_args.data_filedir} --data_filename_train={run_args.data_filename} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}"
     if(run_args.data_reader_prototext):

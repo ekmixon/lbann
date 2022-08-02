@@ -14,14 +14,14 @@ class PROTEINS_Dataset:
     def __init__(self):
         # Check is data is downloaded and processed
         # Load if data exists 
-        # Else Download and process data  
+        # Else Download and process data
         for npy_file in files:
-            if not os.path.isfile(os.path.join(data_dir,"PROTEINS/"+npy_file)):
+            if not os.path.isfile(os.path.join(data_dir, f"PROTEINS/{npy_file}")):
                 self.process_data()
 
-        self.node_features = np.load(os.path.join(data_dir, "PROTEINS/"+files[0]))
-        self.adjs = np.load(os.path.join(data_dir,"PROTEINS/"+files[1]))
-        self.targets = np.load(os.path.join(data_dir, "PROTEINS/"+files[2]))
+        self.node_features = np.load(os.path.join(data_dir, f"PROTEINS/{files[0]}"))
+        self.adjs = np.load(os.path.join(data_dir, f"PROTEINS/{files[1]}"))
+        self.targets = np.load(os.path.join(data_dir, f"PROTEINS/{files[2]}"))
        
     def generate_dataset(self):
         global data_dir
@@ -39,7 +39,7 @@ class PROTEINS_Dataset:
             save_path = os.path.join(data_dir, 'PROTEINS.zip')
             utils.download_url(url, save_path)
         utils.unzip_file(os.path.join(data_dir, "PROTEINS.zip"))
-        
+
         self.generate_dataset()
 
     def __len__(self):

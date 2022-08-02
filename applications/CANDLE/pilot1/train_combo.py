@@ -32,7 +32,7 @@ def construct_model():
     mse = lbann.MeanSquaredError([responses, pred])
 
     SS_res = lbann.Reduction(lbann.Square(lbann.Subtract(responses, pred)), mode='sum')
- 
+
     #SS_tot = var(x) = mean((x-mean(x))^2)
     mini_batch_size = lbann.MiniBatchSize()
     mean = lbann.Divide(lbann.BatchwiseReduceSum(responses), mini_batch_size)

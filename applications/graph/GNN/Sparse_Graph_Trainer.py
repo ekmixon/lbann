@@ -70,7 +70,7 @@ def GraphConvLayer(X,A):
     out_channels_1 = 8 
     input_channels_2 = out_channels_1
     out_channels_2 = 16
-    
+
     graph_1 = GraphConv(input_channels_1, out_channels_1,
                         bias = True,
                         activation = lbann.Relu,
@@ -94,7 +94,7 @@ def GATConvLayer(X,A):
     Returns: 
         (GraphVertexData): Returns the new embedding of the node features
     """
-    
+
     output_channels = 8
     num_layers = 3
     name = 'GatedGraph'
@@ -151,7 +151,7 @@ def make_model(num_vertices = None,
             raise Exception("Unkown Dataset")
 
     assert num_vertices is not None
-    assert num_classes is not None 
+    assert num_classes is not None
     assert node_features is not None 
 
     #----------------------------------
@@ -162,13 +162,13 @@ def make_model(num_vertices = None,
 
     # Input dimensions should be (num_vertices * node_features + num_vertices^2 + num_classes )    
     # Input should have atleast two children since the target is classification 
-    
+
     data = lbann_Graph_Data(input_,num_vertices, node_features,num_classes)
-    
-    feature_matrix = data.x 
-    adj_matrix = data.adj 
+
+    feature_matrix = data.x
+    adj_matrix = data.adj
     target = data.y 
-   
+
     #----------------------------------
     # Perform Graph Convolution
     #----------------------------------
@@ -184,7 +184,7 @@ def make_model(num_vertices = None,
     else:
         ValueError('Invalid Graph kernel specifier "{}" recieved. Expected one of:\
                     GIN,GCN,Graph or GatedGraph'.format(kernel_type))
-    
+
     out_channel = x.shape[1]
     #----------------------------------
     # Apply Reduction on Node Features
@@ -194,28 +194,28 @@ def make_model(num_vertices = None,
                                     num_neurons = str_list([1,num_vertices]),
                                     name="Average_Vector")
     x = x.get_mat(out_channel)
-    
+
     x = lbann.MatMul(average_vector,x, name="Node_Feature_Reduction") 
-    
+
     # X is now a vector with output_channel dimensions 
-    
+
     x = lbann.Reshape(x, dims = str_list([out_channel]), name = "Squeeze")
     x = lbann.FullyConnected(x, num_neurons = 64, name = "hidden_layer_1")
     x = lbann.Relu(x, name = "hidden_layer_1_activation")
     x = lbann.FullyConnected(x, num_neurons = num_classes,
                                 name="Output_Fully_Connected")
-    
+
     #----------------------------------
     # Loss Function and Accuracy s
     #----------------------------------
-    
-    
+
+
     probs = lbann.Softmax(x, name="Softmax")
     loss = lbann.CrossEntropy(probs, target, name="Cross_Entropy_Loss")
     accuracy = lbann.CategoricalAccuracy(probs, target, name="Accuracy")
 
     layers = lbann.traverse_layer_graph(input_)
-    
+
     if callbacks is None:
         print_model = lbann.CallbackPrintModelDescription() #Prints initial Model after Setup
         training_output = lbann.CallbackPrint( interval = 1,
@@ -223,19 +223,18 @@ def make_model(num_vertices = None,
         gpu_usage = lbann.CallbackGPUMemoryUsage()
         timer = lbann.CallbackTimer()
         callbacks = [print_model, training_output, gpu_usage, timer]
-    else:
-        if isinstance (callbacks, list):
-            callbacks = callbacks
+    elif isinstance (callbacks, list):
+        callbacks = callbacks
 
     metrics = [lbann.Metric(accuracy, name='accuracy', unit="%")]
 
-    model = lbann.Model(num_epochs, 
-                       layers = layers,
-                       objective_function = loss,
-                       metrics = metrics, 
-                       callbacks = callbacks
-                       )
-    return model
+    return lbann.Model(
+        num_epochs,
+        layers=layers,
+        objective_function=loss,
+        metrics=metrics,
+        callbacks=callbacks,
+    )
 
 if __name__ == '__main__':
     # Quick check to see if model generates correctly

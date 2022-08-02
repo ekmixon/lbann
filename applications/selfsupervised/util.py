@@ -14,14 +14,14 @@ def make_experiment_dir(job_name=None):
     else:
         experiment_dir = os.path.join(os.getcwd())
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    experiment_dir = os.path.join(experiment_dir,
-                                  '{}_{}'.format(timestamp, job_name))
+    experiment_dir = os.path.join(experiment_dir, f'{timestamp}_{job_name}')
     i = 1
     while os.path.lexists(experiment_dir):
         i += 1
         experiment_dir = os.path.join(
-            os.path.dirname(experiment_dir),
-            '{}_{}_{}'.format(timestamp, job_name, i))
+            os.path.dirname(experiment_dir), f'{timestamp}_{job_name}_{i}'
+        )
+
     experiment_dir = os.path.abspath(experiment_dir)
     os.makedirs(experiment_dir, exist_ok=True)
     return experiment_dir

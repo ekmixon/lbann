@@ -270,11 +270,13 @@ def setup_embeddings(script, config):
     )
     script.add_body_line('')
     script.add_body_line('# Train embeddings')
-    script.add_parallel_command([
-        lbann.lbann_exe(),
-        f'--prototext={prototext_file}',
-        f'--num_io_threads=1',
-    ])
+    script.add_parallel_command(
+        [
+            lbann.lbann_exe(),
+            f'--prototext={prototext_file}',
+            '--num_io_threads=1',
+        ]
+    )
 
 # ----------------------------------------------------------
 # Main function

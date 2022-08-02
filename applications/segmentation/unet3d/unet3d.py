@@ -34,8 +34,7 @@ class UNet3D(lm.Module):
 
         UNet3D.global_count += 1
         self.instance = 0
-        self.name = (name if name
-                     else "unet3d_module{0}".format(UNet3D.global_count))
+        self.name = name or "unet3d_module{0}".format(UNet3D.global_count)
 
         # The list of ([down-conv filters], [up-conv filters], deconv filters)
         self.BLOCKS = [
@@ -52,8 +51,11 @@ class UNet3D(lm.Module):
 
         # Deconvolution should have the same number of input/output channels
         assert self.BLOCKS[-1][2] == self.BOTTOM_BLOCK[1]
-        assert all([self.BLOCKS[x][2] == self.BLOCKS[x+1][1][-1]
-                    for x in range(self.NUM_LEVELS-1)])
+        assert all(
+            self.BLOCKS[x][2] == self.BLOCKS[x + 1][1][-1]
+            for x in range(self.NUM_LEVELS - 1)
+        )
+
 
         # Building blocks
         self.downconvs = []
@@ -61,25 +63,45 @@ class UNet3D(lm.Module):
         self.deconvs = []
         for i, blocks in enumerate(self.BLOCKS):
             downBlock, upBlock, deconv = blocks
-            self.downconvs.append(UNet3DConvBlock(
-                downBlock, name="{}_bconv{}_down".format(self.name, i+1)))
+            self.downconvs.append(
+                UNet3DConvBlock(downBlock, name=f"{self.name}_bconv{i + 1}_down")
+            )
+
             ui = self.NUM_LEVELS-1-i
-            self.upconvs.insert(0, UNet3DConvBlock(
-                upBlock, name="{}_bconv{}_up".format(self.name, ui+1)))
-            self.deconvs.insert(0, Deconvolution3dModule(
-                deconv, 2, stride=2, padding=0, activation=None,
-                bias=False,
-                name="{}_deconv{}".format(self.name, ui+1)))
+            self.upconvs.insert(
+                0, UNet3DConvBlock(upBlock, name=f"{self.name}_bconv{ui + 1}_up")
+            )
+
+            self.deconvs.insert(
+                0,
+                Deconvolution3dModule(
+                    deconv,
+                    2,
+                    stride=2,
+                    padding=0,
+                    activation=None,
+                    bias=False,
+                    name=f"{self.name}_deconv{ui + 1}",
+                ),
+            )
+
 
         # The bottom convolution
         self.bottomconv = UNet3DConvBlock(
-            self.BOTTOM_BLOCK, name="{}_bconv_bottom".format(self.name))
+            self.BOTTOM_BLOCK, name=f"{self.name}_bconv_bottom"
+        )
+
 
         # The last convolution
         self.lastconv = lm.Convolution3dModule(
-            3, 1, stride=1, padding=0, activation=None,
+            3,
+            1,
+            stride=1,
+            padding=0,
+            activation=None,
             bias=False,
-            name="{}_lconv".format(self.name))
+            name=f"{self.name}_lconv",
+        )
 
     def forward(self, x):
         self.instance += 1
@@ -89,11 +111,16 @@ class UNet3D(lm.Module):
             x = self.downconvs[i](x)
             x_concat.append(x)
             x = lbann.Pooling(
-                x, num_dims=3, has_vectors=False,
-                pool_dims_i=2, pool_pads_i=0, pool_strides_i=2,
+                x,
+                num_dims=3,
+                has_vectors=False,
+                pool_dims_i=2,
+                pool_pads_i=0,
+                pool_strides_i=2,
                 pool_mode="max",
-                name="{}_pool{}_instance{}".format(
-                    self.name, i+1, self.instance))
+                name=f"{self.name}_pool{i + 1}_instance{self.instance}",
+            )
+
 
         x = self.bottomconv(x)
 
@@ -120,16 +147,18 @@ class UNet3DConvBlock(lm.Module):
         self.instance = 0
         assert len(out_channels_list) == 2
 
-        self.convs = []
-        for i, channels in enumerate(out_channels_list):
-            self.convs.append(Convolution3dBNModule(
+        self.convs = [
+            Convolution3dBNModule(
                 channels,
                 3,
                 stride=1,
                 padding=1,
                 activation=lbann.Relu,
                 bias=False,
-                name="{}_conv_block_{}".format(self.name, i+1)))
+                name=f"{self.name}_conv_block_{i + 1}",
+            )
+            for i, channels in enumerate(out_channels_list)
+        ]
 
     def forward(self, x, x_concat=None):
         self.instance += 1
@@ -153,17 +182,21 @@ class Convolution3dBNModule(lm.Module):
         super().__init__()
         self.name = kwargs["name"]
         self.activation = None if "activation" not in kwargs.keys() \
-            else kwargs["activation"]
+                else kwargs["activation"]
         kwargs["activation"] = None
 
         self.conv = lm.Convolution3dModule(*args, **kwargs)
 
         bn_scale = lbann.Weights(
             initializer=lbann.ConstantInitializer(value=1.0),
-            name="{}_bn_scale".format(self.name))
+            name=f"{self.name}_bn_scale",
+        )
+
         bn_bias = lbann.Weights(
             initializer=lbann.ConstantInitializer(value=0.0),
-            name="{}_bn_bias".format(self.name))
+            name=f"{self.name}_bn_bias",
+        )
+
         self.bn_weights = [bn_scale, bn_bias]
         self.instance = 0
 
@@ -174,9 +207,9 @@ class Convolution3dBNModule(lm.Module):
             x,
             weights=self.bn_weights,
             statistics_group_size=-1,
-            name="{}_bn_instance{}".format(
-                self.name,
-                self.instance))
+            name=f"{self.name}_bn_instance{self.instance}",
+        )
+
         if self.activation is not None:
             x = self.activation(x)
 
@@ -195,18 +228,12 @@ class Deconvolution3dModule(lm.ConvolutionModule):
 
 
 def create_unet3d_data_reader(train_dir, test_dir):
-    readers = []
-    for role, shuffle, role_dir in [
-            ("train", True, train_dir),
-            ("test", False, test_dir)]:
-        if role_dir is None:
-            continue
-
-        readers.append(lbann.reader_pb2.Reader(
+    readers = [
+        lbann.reader_pb2.Reader(
             name="hdf5",
             role=role,
             shuffle=shuffle,
-            data_file_pattern="{}/*.hdf5".format(role_dir),
+            data_file_pattern=f"{role_dir}/*.hdf5",
             validation_percent=0,
             percent_of_data_to_use=1.0,
             scaling_factor_int16=1.0,
@@ -215,19 +242,19 @@ def create_unet3d_data_reader(train_dir, test_dir):
             hdf5_hyperslab_labels=True,
             disable_labels=False,
             disable_responses=True,
-        ))
+        )
+        for role, shuffle, role_dir in [
+            ("train", True, train_dir),
+            ("test", False, test_dir),
+        ]
+        if role_dir is not None
+    ]
 
     return lbann.reader_pb2.DataReader(reader=readers)
 
 
 def create_unet3d_optimizer(learn_rate):
-    # TODO: This is a temporal optimizer copied from CosomoFlow.
-    adam = lbann.Adam(
-        learn_rate=learn_rate,
-        beta1=0.9,
-        beta2=0.999,
-        eps=1e-8)
-    return adam
+    return lbann.Adam(learn_rate=learn_rate, beta1=0.9, beta2=0.999, eps=1e-8)
 
 
 if __name__ == '__main__':
@@ -258,16 +285,24 @@ if __name__ == '__main__':
         '--depth-groups', action='store', type=int, default=4,
         help='the number of processes for the depth dimension (default: 4)')
     default_lc_dataset = '/p/gpfs1/brainusr/datasets/LiTS/hdf5_dim128_float'
-    default_train_dir = '{}/train'.format(default_lc_dataset)
-    default_test_dir = '{}/test'.format(default_lc_dataset)
+    default_train_dir = f'{default_lc_dataset}/train'
+    default_test_dir = f'{default_lc_dataset}/test'
     parser.add_argument(
-        '--train-dir', action='store', type=str, default=default_train_dir,
-        help='the directory of the training dataset (default: \'{}\')'
-        .format(default_train_dir))
+        '--train-dir',
+        action='store',
+        type=str,
+        default=default_train_dir,
+        help=f"the directory of the training dataset (default: \'{default_train_dir}\')",
+    )
+
     parser.add_argument(
-        '--test-dir', action='store', type=str, default=default_test_dir,
-        help='the directory of the test dataset (default: \'{}\')'
-        .format(default_test_dir))
+        '--test-dir',
+        action='store',
+        type=str,
+        default=default_test_dir,
+        help=f"the directory of the test dataset (default: \'{default_test_dir}\')",
+    )
+
 
     parser.add_argument(
         '--dynamically-reclaim-error-signals', action='store_true',

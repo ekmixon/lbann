@@ -7,7 +7,7 @@ import glob
 fdir = sys.argv[1]
 epoch = sys.argv[2]
 print(fdir)
-scalar_files = glob.glob(fdir+"*training-epoch"+str(epoch)+"*gt_sca*.npy")
+scalar_files = glob.glob(f"{fdir}*training-epoch{str(epoch)}*gt_sca*.npy")
 scalar_jag = np.load(scalar_files[0])
 print("First JAG param shape " , scalar_jag.shape)
 print("param jag ", scalar_jag)

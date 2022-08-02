@@ -51,7 +51,7 @@ def download_graph(name='youtube',
     if not os.path.isdir(data_dir):
         os.makedirs(data_dir)
     data_dir = os.path.realpath(data_dir)
-    compressed_file = graph_file + '.gz'
+    compressed_file = f'{graph_file}.gz'
 
     # Download and uncompress graph file
     urllib.request.urlretrieve(download_urls[name],
@@ -106,10 +106,9 @@ def node2vec_walk(graph_file,
                                 'node2vec', 'node2vec')
     if not os.path.isfile(node2vec_exe):
         raise FileNotFoundError(
-            'Could not find node2vec executable at {}. '
-            'Has SNAP been built?'
-            .format(node2vec_exe)
+            f'Could not find node2vec executable at {node2vec_exe}. Has SNAP been built?'
         )
+
 
     # Make sure output directory exists
     output_dir = os.path.dirname(os.path.realpath(walk_file))
@@ -119,17 +118,18 @@ def node2vec_walk(graph_file,
     # Construct invocation
     command = [
         node2vec_exe,
-        '-i:{}'.format(graph_file),
-        '-o:{}'.format(walk_file),
+        f'-i:{graph_file}',
+        f'-o:{walk_file}',
         '-d:-1',
-        '-l:{}'.format(walk_length),
-        '-r:{}'.format(walks_per_node),
+        f'-l:{walk_length}',
+        f'-r:{walks_per_node}',
         '-k:-1',
         '-e:-1',
-        '-p:{}'.format(return_param),
-        '-q:{}'.format(inout_param),
+        f'-p:{return_param}',
+        f'-q:{inout_param}',
         '-ow',
     ]
+
     if verbose:
         command.append('-v')
     if directed:

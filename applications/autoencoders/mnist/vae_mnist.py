@@ -192,10 +192,10 @@ opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup data reader
 data_reader_prefix = 'data_reader_mnist'
-if args.data_reader == "default" or args.data_reader == "mnist":
-  data_reader_file = data_reader_prefix + '.prototext'
+if args.data_reader in ["default", "mnist"]:
+  data_reader_file = f'{data_reader_prefix}.prototext'
 elif args.data_reader == "numpy_npz_int16":
-  data_reader_file = data_reader_prefix + '_numpy_npz_int16.prototext'
+  data_reader_file = f'{data_reader_prefix}_numpy_npz_int16.prototext'
 else:
   raise InvalidOption('Data reader selection \"' + args.data_reader + '\" is invalid. Use \"numpy_npz_int16\", or \"mnist\". Default is data_reader_mnist.prototext.')
 

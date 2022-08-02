@@ -25,17 +25,17 @@ class FullyConnectedAutoencoder(lbann.modules.Module):
             self.name = f'fcautoencoder{FullyConnectedAutoencoder.global_count}'
 
         # Encoder
-        self.encoder = []
-        for i, dim in enumerate(encoder_hidden_dims):
-            self.encoder.append(
-                lbann.modules.FullyConnectedModule(
-                    size=dim,
-                    bias=False,
-                    activation=activation,
-                    name=f'{self.name}_encoder{i}',
-                    data_layout=data_layout,
-                )
+        self.encoder = [
+            lbann.modules.FullyConnectedModule(
+                size=dim,
+                bias=False,
+                activation=activation,
+                name=f'{self.name}_encoder{i}',
+                data_layout=data_layout,
             )
+            for i, dim in enumerate(encoder_hidden_dims)
+        ]
+
         self.encoder.append(
             lbann.modules.FullyConnectedModule(
                 size=latent_dim,
@@ -47,17 +47,17 @@ class FullyConnectedAutoencoder(lbann.modules.Module):
         )
 
         # Decoder
-        self.decoder = []
-        for i, dim in enumerate(decoder_hidden_dims):
-            self.decoder.append(
-                lbann.modules.FullyConnectedModule(
-                    size=dim,
-                    bias=False,
-                    activation=activation,
-                    name=f'{self.name}_decoder{i}',
-                    data_layout=data_layout,
-                )
+        self.decoder = [
+            lbann.modules.FullyConnectedModule(
+                size=dim,
+                bias=False,
+                activation=activation,
+                name=f'{self.name}_decoder{i}',
+                data_layout=data_layout,
             )
+            for i, dim in enumerate(decoder_hidden_dims)
+        ]
+
         self.decoder.append(
             lbann.modules.FullyConnectedModule(
                 size=data_dim,

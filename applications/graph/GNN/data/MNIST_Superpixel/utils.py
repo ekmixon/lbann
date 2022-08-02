@@ -23,9 +23,7 @@ def download_data():
 
             if not os.path.isfile(tar_name):
                 urllib.request.urlretrieve(url, filename=tar_name)
-                extract_data()
-            else:
-                extract_data()
+            extract_data()
 
 def extract_data():
      tar_name = os.path.join(data_dir, "mnist_superpixel.tar.gz") 
@@ -52,31 +50,25 @@ def edge_list_to_dense(elist):
 def process_training_data(): # Process Training File
     train_file_path = os.path.join(data_dir, 'training.pt')
     #test_file_path = os.path.join(data_dir, 'test.pt')
-    
+
     node_features, edge_index, edge_slices, positions, y = torch.load(train_file_path)
-    
+
     assert y.size(0) == node_features.size(0)
     assert y.size(0) == positions.size(0)
     assert y.size(0) == 60000 ## 
 
     num_data = 60000
     num_vertices = 75
-        # Nodes features should be (60000, 75)
-        
     node_features = np.float32(node_features)
-        
-        # Position should be (60000, 75, 2)
 
     positions = np.float32(positions)
 
-        # Convert edge_index to edge matrix representation with shape (60000, 75, 75)
-        
     adj_matrices = np.zeros( (num_data, num_vertices, num_vertices), dtype=np.float)
 
     #assert (self.num_data + 1) == edge_slices.size(0), "Expected: {}, Got{} ".format(60001, edge_slices.size(0))
-        
+
     for slice_index in range(num_data):
-        print("{}/{} completed \r".format(slice_index+1, num_data), end='',flush=True)
+        print(f"{slice_index + 1}/{num_data} completed \r", end='', flush=True)
         start_index = edge_slices[slice_index]
         end_index = edge_slices[slice_index + 1]
 
@@ -91,7 +83,7 @@ def process_training_data(): # Process Training File
         targets = np.zeros ( (num_data, 10), dtype=np.float)
 
     for i, target in enumerate(y):
-        print("{}/{} completed".format(i+1, len(y)), end='') 
+        print(f"{i + 1}/{len(y)} completed", end='')
         targets[i][target] = 1
 
     np.save('node_features.npy',node_features)

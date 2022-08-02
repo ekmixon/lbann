@@ -17,7 +17,7 @@ def dump_motifs(prunejuice_output_dir, motif_file):
     for file_name in os.listdir(distributed_motif_dir):
         file_name = os.path.join(distributed_motif_dir, file_name)
         with open(file_name, 'r') as f:
-            for line in f.readlines():
+            for line in f:
                 tokens = line.split(',')
                 motif = frozenset(int(t) for t in tokens[1:-1])
                 motifs.add(motif)

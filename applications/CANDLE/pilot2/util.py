@@ -9,14 +9,12 @@ p1_thresh = 0.85
 p2_thresh = 0.85
 
 def preprocess_data(dirspath,channels=None):
-# define a tuple of specific channels if user listed them
-  channels_tuple = tuple(range(14))
-  if channels is not None:
-    channels_tuple = tuple(channels)
-
+  channels_tuple = tuple(channels) if channels is not None else tuple(range(14))
   files_train = []
   states      = []
   cons      = []
+
+  frame_start = 0
 
   #for d in dirspath:
   for _ in range(1):
@@ -26,18 +24,15 @@ def preprocess_data(dirspath,channels=None):
     filenames = os.listdir(dirspath)
     filenames.sort()
     random.shuffle(filenames)
-  
+
     filenames_divide  = int(1.0 * len(filenames))
     filenames_train = filenames[:filenames_divide]
 
-    files_train.append([dirspath + "/" + f for f in filenames_train])
-  
-    frame_start = 0
-  
+    files_train.append([f"{dirspath}/{f}" for f in filenames_train])
+
     for f in filenames_train:
     # read in the data file
-      d = np.load(dirspath + '/' + f)
-  
+      d = np.load(f'{dirspath}/{f}')
     # extract fields
       p = d['probs'][d['frames'] >= frame_start]
       s = d['states'][d['frames'] >= frame_start]
@@ -47,10 +42,10 @@ def preprocess_data(dirspath,channels=None):
 
       s = s[(p[:,0] > p0_thresh) | (p[:,1] > p1_thresh) | (p[:,2] > p2_thresh)]
       n = n[(p[:,0] > p0_thresh) | (p[:,1] > p1_thresh) | (p[:,2] > p2_thresh)]
-  
+
       states.append(s)
-  
-  
+
+
       # append concentrations, filter out by channel id(s) if given
       # can we do channel first here, transpose?, move axis?
       n = np.array(n)
@@ -59,7 +54,7 @@ def preprocess_data(dirspath,channels=None):
         cons.append(n[:,:,:,channels_tuple])
       else:
         cons.append(n)
-  
+
 
   states      = np.concatenate(states,axis=0)
   cons        = np.concatenate(cons,axis=0)
@@ -85,11 +80,10 @@ def preprocess_data(dirspath,channels=None):
 
   cons      /= maxs
   labels      = states
-   
+
   #transpose to NCHW
   cons = cons.transpose(0,3,1,2)
 
   X = cons.reshape(cons.shape[0],-1)
   y = labels.reshape(-1,1)
-  Xy_data = np.hstack((X,y))
-  return Xy_data
+  return np.hstack((X,y))

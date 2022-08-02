@@ -100,9 +100,7 @@ def get_sample(index, num_patches):
     label_vec[label] = 1
 
     # Return flattened data tensors
-    flat_data = []
-    for patch in patches:
-        flat_data.append(patch.reshape(-1))
+    flat_data = [patch.reshape(-1) for patch in patches]
     flat_data.append(label_vec)
     return np.concatenate(flat_data)
 
@@ -112,11 +110,11 @@ def num_labels(num_patches):
     num_patterns = 0
     if num_patches == 2:
         num_patterns = len(patterns_2patch)
-    if num_patches == 3:
+    elif num_patches == 3:
         num_patterns = len(patterns_3patch)
-    if num_patches == 4:
+    elif num_patches == 4:
         num_patterns = len(patterns_4patch)
-    if num_patches == 5:
+    elif num_patches == 5:
         num_patterns = len(patterns_5patch)
     return 4 * num_patterns
 def sample_dims(num_patches):

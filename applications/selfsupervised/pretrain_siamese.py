@@ -59,7 +59,7 @@ def setup(num_patches=3,
     cross_entropy = lbann.CrossEntropy([probs, labels])
     l2_reg_weights = set()
     for l in lbann.traverse_layer_graph(input):
-        if type(l) == lbann.Convolution or type(l) == lbann.FullyConnected:
+        if type(l) in [lbann.Convolution, lbann.FullyConnected]:
             l2_reg_weights.update(l.weights)
     l2_reg = lbann.L2WeightRegularization(weights=l2_reg_weights, scale=0.0002)
     obj = lbann.ObjectiveFunction([cross_entropy, l2_reg])

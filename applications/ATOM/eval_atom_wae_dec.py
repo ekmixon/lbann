@@ -106,7 +106,10 @@ def construct_model(run_args):
     sequence_length = run_args.sequence_length
     assert sequence_length is not None, 'should be training seq len + bos + eos'
 
-    print("sequence length is {}, which is training sequence len + bos + eos".format(sequence_length))
+    print(
+        f"sequence length is {sequence_length}, which is training sequence len + bos + eos"
+    )
+
     data_layout = "data_parallel"
     # Layer graph
     input_ = lbann.Input(target_mode='N/A',name='inp_data')
@@ -115,8 +118,7 @@ def construct_model(run_args):
                              slice_points=str_list([0, sequence_length, sequence_length+run_args.z_dim]),
                              name='inp_slice')
     inp_smile = lbann.Identity(inp_slice,name='inp_smile')
-    z  = lbann.Identity(inp_slice, name='z') 
-    wae_loss= []
+    z  = lbann.Identity(inp_slice, name='z')
     input_feature_dims = sequence_length
 
     embedding_size = run_args.embedding_dim
@@ -124,7 +126,7 @@ def construct_model(run_args):
     assert embedding_size is not None
     assert dictionary_size is not None
 
-    save_output = True if run_args.dump_outputs_dir else False
+    save_output = bool(run_args.dump_outputs_dir)
 
     print("save output? ", save_output, "out dir ",  run_args.dump_outputs_dir)
     #uncomment below for random sampling
@@ -150,8 +152,7 @@ def construct_model(run_args):
 
 
 
-    wae_loss.append(recon)
-
+    wae_loss = [recon]
     layers = list(lbann.traverse_layer_graph(input_))
     # Setup objective function
     weights = set()
@@ -202,13 +203,13 @@ def construct_data_reader(run_args):
     os.environ["DATA_PATH"] = run_args.data_path
     seq_len = run_args.sequence_length+run_args.z_dim
     print("SEQ LEN for env ", seq_len)
-    os.environ["MAX_SEQ_LEN"] = str(seq_len) 
+    os.environ["MAX_SEQ_LEN"] = str(seq_len)
     print("MODULE file ", module_file)
 
     module_name = os.path.splitext(os.path.basename(module_file))[0]
     module_dir = os.path.dirname(module_file)
 
-    print("module_name: {}\tmodule_dir: {}".format(module_name, module_dir))
+    print(f"module_name: {module_name}\tmodule_dir: {module_dir}")
 
     # Base data reader message
     message = lbann.reader_pb2.DataReader()
@@ -263,9 +264,7 @@ def main():
     else:
         work_dir = os.path.join(os.getcwd())
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    experiment_dir = os.path.join(
-        work_dir, "{}_{}".format(timestamp, run_args.job_name)
-    )
+    experiment_dir = os.path.join(work_dir, f"{timestamp}_{run_args.job_name}")
     if not os.path.exists(experiment_dir):
         os.makedirs(experiment_dir)
 

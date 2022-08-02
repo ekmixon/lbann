@@ -9,18 +9,24 @@ class MACCForward(lbann.modules.Module):
 
     #model capacity factor cf
     def __init__(self, out_dim,cf=1,name=None):
-       self.instance = 0
-       self.name = (name if name
-                     else 'macc_forward{0}'.format(MACCForward.global_count))
+        self.instance = 0
+        self.name = name or 'macc_forward{0}'.format(MACCForward.global_count)
 
-       fc = lbann.modules.FullyConnectedModule
-       
-       assert isinstance(cf, int), 'model capacity factor should be an int!'
-       #generator #fc2_gen0
-       g_neurons = [x*cf for x in [32,256,1024]]
-       self.gen_fc = [fc(g_neurons[i],activation=lbann.Relu, name=self.name+'gen_fc'+str(i))
-                      for i in range(len(g_neurons))]
-       self.predy = fc(out_dim,name=self.name+'pred_out')
+        fc = lbann.modules.FullyConnectedModule
+
+        assert isinstance(cf, int), 'model capacity factor should be an int!'
+        #generator #fc2_gen0
+        g_neurons = [x*cf for x in [32,256,1024]]
+        self.gen_fc = [
+            fc(
+                g_neurons[i],
+                activation=lbann.Relu,
+                name=f'{self.name}gen_fc{str(i)}',
+            )
+            for i in range(len(g_neurons))
+        ]
+
+        self.predy = fc(out_dim, name=f'{self.name}pred_out')
       
     def forward(self,x):
         return self.predy(self.gen_fc[2](self.gen_fc[1](self.gen_fc[0](x))))
@@ -31,18 +37,24 @@ class MACCInverse(lbann.modules.Module):
     global_count = 0  # Static counter, used for default names
     #model capacity factor cf
     def __init__(self, out_dim,cf=1,name=None):
-       self.instance = 0
-       self.name = (name if name
-                     else 'macc_inverse{0}'.format(MACCInverse.global_count))
+        self.instance = 0
+        self.name = name or 'macc_inverse{0}'.format(MACCInverse.global_count)
 
-       fc = lbann.modules.FullyConnectedModule
-       
-       assert isinstance(cf, int), 'model capacity factor should be an int!'
-       #generator #fc_gen1
-       g_neurons = [x*cf for x in [16,128,64]]
-       self.gen_fc = [fc(g_neurons[i],activation=lbann.Relu, name=self.name+'gen_fc'+str(i))
-                      for i in range(len(g_neurons))]
-       self.predx = fc(out_dim,name=self.name+'pred_out')
+        fc = lbann.modules.FullyConnectedModule
+
+        assert isinstance(cf, int), 'model capacity factor should be an int!'
+        #generator #fc_gen1
+        g_neurons = [x*cf for x in [16,128,64]]
+        self.gen_fc = [
+            fc(
+                g_neurons[i],
+                activation=lbann.Relu,
+                name=f'{self.name}gen_fc{str(i)}',
+            )
+            for i in range(len(g_neurons))
+        ]
+
+        self.predx = fc(out_dim, name=f'{self.name}pred_out')
 
     def forward(self,y):
         return self.predx(self.gen_fc[2](self.gen_fc[1](self.gen_fc[0](y))))

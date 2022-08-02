@@ -25,7 +25,7 @@ class GRUModule(lbann.modules.Module):
         self.instance = 0
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.name = name if name else f'gru{GRUModule.global_count}'
+        self.name = name or f'gru{GRUModule.global_count}'
         self.device = device
         self.datatype = datatype
 
@@ -65,7 +65,7 @@ class GRUModule(lbann.modules.Module):
         self.instance += 1
         if not h:
             h = self.zeros
-        y = lbann.GRU(
+        return lbann.GRU(
             x,
             h,
             hidden_size=self.hidden_size,
@@ -75,7 +75,6 @@ class GRUModule(lbann.modules.Module):
             device=self.device,
             datatype=self.datatype,
         )
-        return y
 
 class MolVAE(lbann.modules.Module):
     """Molecular VAE.
@@ -101,8 +100,7 @@ class MolVAE(lbann.modules.Module):
         """
         MolVAE.global_count += 1
         self.instance = 0
-        self.name = (name if name
-                     else 'molvae_module{0}'.format(MolVAE.global_count))
+        self.name = name or 'molvae_module{0}'.format(MolVAE.global_count)
 
         self.input_feature_dims = input_feature_dims
         self.embedding_size = embedding_size
@@ -117,12 +115,13 @@ class MolVAE(lbann.modules.Module):
         #Encoder
         self.encoder_rnn = gru(
             hidden_size=256,
-            name=self.name+'_encoder_rnn',
+            name=f'{self.name}_encoder_rnn',
             datatype=self.datatype,
             weights_datatype=self.weights_datatype,
         )
-        self.q_mu = fc(128,name=self.name+'_encoder_qmu')
-        self.q_logvar = fc(128,name=self.name+'_encoder_qlogvar')
+
+        self.q_mu = fc(128, name=f'{self.name}_encoder_qmu')
+        self.q_logvar = fc(128, name=f'{self.name}_encoder_qlogvar')
         for w in self.q_mu.weights + self.q_logvar.weights:
             w.datatype = self.weights_datatype
 
@@ -130,12 +129,13 @@ class MolVAE(lbann.modules.Module):
         self.decoder_rnn = gru(
             hidden_size=512,
             num_layers=3,
-            name=self.name+'_decoder_rnn',
+            name=f'{self.name}_decoder_rnn',
             datatype=self.datatype,
             weights_datatype=self.weights_datatype,
         )
-        self.decoder_lat = fc(512, name=self.name+'_decoder_lat')
-        self.decoder_fc = fc(self.dictionary_size, name=self.name+'_decoder_fc')
+
+        self.decoder_lat = fc(512, name=f'{self.name}_decoder_lat')
+        self.decoder_fc = fc(self.dictionary_size, name=f'{self.name}_decoder_fc')
         for w in self.decoder_lat.weights + self.decoder_fc.weights:
             w.datatype = self.weights_datatype
         self.decoder_fc.weights[0].initializer = lbann.NormalInitializer(

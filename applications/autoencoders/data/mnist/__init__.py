@@ -28,7 +28,7 @@ def download_data():
     # Download and uncompress MNIST data files, if needed
     for data_file, url in urls.items():
         data_file = os.path.join(data_dir, data_file)
-        compressed_file = data_file + '.gz'
+        compressed_file = f'{data_file}.gz'
         if not os.path.isfile(data_file):
             urllib.request.urlretrieve(url, filename=compressed_file)
             with gzip.open(compressed_file, 'rb') as in_file:

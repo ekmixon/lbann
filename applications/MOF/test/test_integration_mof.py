@@ -71,12 +71,12 @@ def make_data_reader(lbann):
 
     return reader 
 def construct_model(lbann):
-    
+
     latent_dim = 2048
     number_of_atoms = 11
     layers, img_loss, metrics = MOFae.gen_layers(latent_dim, number_of_atoms)
     callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
-    
+
     return lbann.Model(num_epochs,
                        layers = layers, 
                        objective_function = img_loss, 
@@ -125,17 +125,17 @@ def augment_test_func(test_func):
             for line in f:
                 match = re.search('training epoch [0-9]+ recon_error : ([0-9.]+)', line)
                 if match:
-                    train_accuracy = float(match.group(1))
+                    train_accuracy = float(match[1])
                 match = re.search('training epoch [0-9]+ mini-batch time statistics : ([0-9.]+)s mean', line)
                 if match:
-                    mini_batch_times.append(float(match.group(1)))
+                    mini_batch_times.append(float(match[1]))
 
         # Check if training accuracy is within expected range
         assert (expected_MSE_range[0]
                 < train_accuracy
                 <expected_MSE_range[1]), \
                 'train accuracy is outside expected range'
-       
+
         #Only tested on Ray. Skip if mini-batch test on another cluster. Change this when mini-batch values are available for other clusters 
 
         if (cluster == 'ray'):

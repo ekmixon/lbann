@@ -107,7 +107,7 @@ def construct_model(run_args):
     sequence_length = run_args.sequence_length
     assert sequence_length is not None
 
-    print("sequence length is {}".format(sequence_length))
+    print(f"sequence length is {sequence_length}")
     data_layout = "data_parallel"
 
     # Layer graph
@@ -139,38 +139,41 @@ def construct_model(run_args):
 
     last_output = lbann.Constant(
         value=0.0,
-        num_neurons="{}".format(run_args.hidden),
+        num_neurons=f"{run_args.hidden}",
         data_layout=data_layout,
         name="lstm_init_output",
     )
 
+
     lstm1_prev_state = [last_output]
 
     loss = []
-    idl = []
-    for i in range(sequence_length):
-        idl.append(lbann.Identity(x_slice, name="slice_idl_" + str(i), device="CPU"))
+    idl = [
+        lbann.Identity(x_slice, name=f"slice_idl_{str(i)}", device="CPU")
+        for i in range(sequence_length)
+    ]
 
     for i in range(sequence_length - 1):
 
         emb_l = lbann.Embedding(
             idl[i],
-            name="emb_" + str(i),
+            name=f"emb_{str(i)}",
             weights=emb_weights,
             embedding_dim=embedding_dim,
             num_embeddings=num_embeddings,
         )
 
+
         x, lstm1_prev_state = lstm1(emb_l, lstm1_prev_state)
         fc_l = fc(x)
-        y_soft = lbann.Softmax(fc_l, name="soft_" + str(i))
+        y_soft = lbann.Softmax(fc_l, name=f"soft_{str(i)}")
         gt = lbann.OneHot(idl[i + 1], size=num_embeddings)
-        ce = lbann.CrossEntropy([y_soft, gt], name="loss_" + str(i))
+        ce = lbann.CrossEntropy([y_soft, gt], name=f"loss_{str(i)}")
         # mask padding in input
         pad_mask = lbann.NotEqual(
             [idl[i], lbann.Constant(value=pad_index, num_neurons="1")],
         )
-        ce_mask = lbann.Multiply([pad_mask, ce], name="loss_mask_" + str(i))
+        ce_mask = lbann.Multiply([pad_mask, ce], name=f"loss_mask_{str(i)}")
         loss.append(lbann.LayerTerm(ce_mask, scale=1 / (sequence_length - 1)))
 
     layers = list(lbann.traverse_layer_graph(_input))
@@ -213,7 +216,7 @@ def construct_data_reader(run_args):
     module_name = os.path.splitext(os.path.basename(module_file))[0]
     module_dir = os.path.dirname(module_file)
 
-    print("module_name: {}\tmodule_dir: {}".format(module_name, module_dir))
+    print(f"module_name: {module_name}\tmodule_dir: {module_dir}")
 
     # Base data reader message
     message = lbann.reader_pb2.DataReader()
@@ -267,9 +270,7 @@ def main():
     else:
         work_dir = os.path.join(os.getcwd())
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    experiment_dir = os.path.join(
-        work_dir, "{}_{}".format(timestamp, run_args.job_name)
-    )
+    experiment_dir = os.path.join(work_dir, f"{timestamp}_{run_args.job_name}")
     if not os.path.exists(experiment_dir):
         os.makedirs(experiment_dir)
 
@@ -280,7 +281,7 @@ def main():
     # dump the config to the experiment_dir so that it can be used to load the model in pytorch (moses codebase)
     ppn = 4 if run_args.scheduler == "lsf" else 2
     print("args:\n" + str(run_args))
-    torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
+    torch.save(run_args, f"{experiment_dir}/{run_args.job_name}_config.pt")
     status = lbann.contrib.launcher.run(
         trainer,
         model,

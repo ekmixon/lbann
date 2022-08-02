@@ -15,8 +15,7 @@ num_channels = 14
 
 # Sample access functions
 def get_sample(index):
-    sample = samples[index]
-    return sample
+    return samples[index]
 
 def num_samples():
     return samples.shape[0]
